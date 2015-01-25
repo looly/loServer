@@ -18,6 +18,7 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 
 import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.loServer.action.Action;
 
 /**
@@ -66,7 +67,14 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 		final String path = Request.getPath(nettyRequest.getUri());
 		action = ServerSetting.getActionMap().get(path);
 		if(null == action) {
-			log.debug("Pass [{}]", path);
+			if(StrUtil.isBlank(path) || StrUtil.SLASH.equals(path)) {
+				request = Request.build(nettyRequest);
+				//如果未设置根路径，跳转到主页
+				response.setContent("Welcome to LoServer.");
+			}else {
+				log.debug("Pass [{}]", path);
+			}
+			
 			//无对应的Action，Pass掉
 			isPass = true;
 			writeResponse(ctx);

@@ -12,8 +12,8 @@ import io.netty.handler.codec.http.HttpServerCodec;
 
 import org.slf4j.Logger;
 
+import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
-import com.xiaoleilu.loServer.action.ExampleAction;
 
 /**
  * LoServer starter<br>
@@ -32,6 +32,7 @@ public class LoServer {
 	 * @throws InterruptedException 
 	 */
 	public void start(int port) throws InterruptedException {
+		long start = System.currentTimeMillis();
 		// Configure the server.
 		final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 		final EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -51,9 +52,8 @@ public class LoServer {
 					}
 				});
 			
-			log.info("Netty Http Server Start on port {}", port);
-			
 			final Channel ch = b.bind(port).sync().channel();
+			log.info("***** Welcome To LoServer on port [{}], startting spend {}ms *****", port, DateUtil.spendMs(start));
 			ch.closeFuture().sync();
 		} finally {
 			bossGroup.shutdownGracefully();
@@ -70,10 +70,5 @@ public class LoServer {
 		} catch (InterruptedException e) {
 			log.error("LoServer start error!", e);
 		}
-	}
-	
-	public static void main(String[] args) {
-		ServerSetting.addAction("/", ExampleAction.class);
-		start();
 	}
 }

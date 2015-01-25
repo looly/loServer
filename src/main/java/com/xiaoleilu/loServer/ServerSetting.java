@@ -26,7 +26,9 @@ public class ServerSetting {
 	
 	/** 字符编码 */
 	private static String charset = DEFAULT_CHARSET;
+	/** 端口 */
 	private static int port = 8090;
+	/** Action映射表 */
 	private static Map<String, Action> actionMap = new HashMap<String, Action>();
 	
 	/**

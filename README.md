@@ -1,3 +1,3 @@
-## text formatter
+## loServer
 
-提供网页中正文的处理
+基于Netty的Http应用服务器
