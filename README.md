@@ -2,6 +2,8 @@
 
 基于Netty的Http应用服务器
 
+Netty版本是4.X
+
 ### 使用方法
 1. 新建一个类实现Action接口，例如我新建了一个ExampleAction
 2. 调用ServerSetting.addAction("/example", ExampleAction.class);增加请求路径和Action的映射关系
