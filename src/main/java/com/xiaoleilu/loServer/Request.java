@@ -346,7 +346,9 @@ public class Request {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("\r\nprotocolVersion: ").append(protocolVersion).append("\r\n");
 		sb.append("uri: ").append(uri).append("\r\n");
+		sb.append("path: ").append(path).append("\r\n");
 		sb.append("method: ").append(method).append("\r\n");
+		sb.append("ip: ").append(ip).append("\r\n");
 		sb.append("headers: ").append(headers).append("\r\n");
 		sb.append("params: \r\n");
 		for ( Entry<String, List<String>> entry : params.entrySet()) {
