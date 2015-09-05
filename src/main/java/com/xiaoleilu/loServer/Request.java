@@ -404,9 +404,8 @@ public class Request {
 			uri = new URI(uriStr);
 		} catch (URISyntaxException e) {
 			Log.error("", e);
-			return null;
 		}
 		
-		return uri.getPath();
+		return uri == null ? null : uri.getPath();
 	}
 }

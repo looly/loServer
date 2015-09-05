@@ -37,6 +37,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		if(isPass) {
+			isPass = false;
 			return;
 		}
 		
@@ -78,16 +79,15 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 			//无对应的Action，Pass掉
 			isPass = true;
 			writeResponse(ctx);
-			return;
+		}else{
+			// 状态100 continue
+			if (HttpHeaders.is100ContinueExpected(nettyRequest)) {
+				ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
+			}
+			
+			// 构建Request
+			request = Request.build(ctx, nettyRequest);
 		}
-		
-		// 状态100 continue
-		if (HttpHeaders.is100ContinueExpected(nettyRequest)) {
-			ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
-		}
-		
-		// 构建Request
-		request = Request.build(ctx, nettyRequest);
 	}
 	
 	/**
