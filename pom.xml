@@ -5,7 +5,7 @@
 
 	<groupId>com.xiaoleilu</groupId>
 	<artifactId>loServer</artifactId>
-	<version>0.1.1</version>
+	<version>0.2.0</version>
 	<packaging>jar</packaging>
 	<description>基于Netty的嵌入式应用服务器</description>
 
@@ -28,12 +28,12 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.25.Final</version>
+			<version>4.0.31.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-example</artifactId>
-			<version>4.0.25.Final</version>
+			<version>4.0.31.Final</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>

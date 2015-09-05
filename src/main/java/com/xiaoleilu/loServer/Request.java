@@ -1,14 +1,5 @@
 package com.xiaoleilu.loServer;
 
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.CookieDecoder;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpHeaders.Values;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.QueryStringDecoder;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -25,6 +16,15 @@ import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
+
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaders.Values;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 
 /**
  * Http请求对象
@@ -322,9 +322,9 @@ public class Request {
 		//Cookie
 		final String cookieString =this.headers.get(Names.COOKIE);
 		if(StrUtil.isNotBlank(cookieString)) {
-			final Set<Cookie> cookies = CookieDecoder.decode(cookieString);
+			final Set<Cookie> cookies = ServerCookieDecoder.LAX .decode(cookieString);
 			for (Cookie cookie : cookies) {
-				this.cookies.put(cookie.getName(), cookie);
+				this.cookies.put(cookie.name(), cookie);
 			}
 		}
 	}

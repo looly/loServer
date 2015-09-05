@@ -2,15 +2,15 @@ package com.xiaoleilu.loServer;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.Cookie;
-import io.netty.handler.codec.http.DefaultCookie;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.ServerCookieEncoder;
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 
 import java.nio.charset.Charset;
@@ -180,7 +180,7 @@ public class Response {
 			
 			//Cookies
 			for (Cookie cookie : cookies) {
-				httpHeaders.add(Names.SET_COOKIE, ServerCookieEncoder.encode(cookie));
+				httpHeaders.add(Names.SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie));
 			}
 			
 			return fullHttpResponse;
