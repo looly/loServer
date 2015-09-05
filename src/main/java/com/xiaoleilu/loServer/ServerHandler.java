@@ -68,7 +68,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 		action = ServerSetting.getActionMap().get(path);
 		if(null == action) {
 			if(StrUtil.isBlank(path) || StrUtil.SLASH.equals(path)) {
-				request = Request.build(nettyRequest);
+				request = Request.build(ctx, nettyRequest);
 				//如果未设置根路径，跳转到主页
 				response.setContent("Welcome to LoServer.");
 			}else {
@@ -87,7 +87,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 		}
 		
 		// 构建Request
-		request = Request.build(nettyRequest);
+		request = Request.build(ctx, nettyRequest);
 	}
 	
 	/**

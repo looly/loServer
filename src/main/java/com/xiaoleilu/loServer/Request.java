@@ -1,5 +1,6 @@
 package com.xiaoleilu.loServer;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -17,6 +18,7 @@ import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpHeaders.Values;
@@ -45,6 +47,7 @@ public class Request {
 	private String uri;
 	private String path;
 	private String method;
+	private String ip;
 	private Map<String, String> headers = new HashMap<String, String>();
 	private Map<String, List<String>> params = new HashMap<String, List<String>>();
 	private Map<String, Cookie> cookies = new HashMap<String, Cookie>();
@@ -78,6 +81,14 @@ public class Request {
 	 */
 	public String getMethod() {
 		return method;
+	}
+	
+	/**
+	 * 获得IP地址
+	 * @return IP地址
+	 */
+	public String getIp() {
+		return ip;
 	}
 
 	/**
@@ -347,10 +358,11 @@ public class Request {
 	
 	/**
 	 * 构建Request对象
+	 * @param ctx ChannelHandlerContext
 	 * @param nettyRequest Netty的HttpRequest
 	 * @return Request
 	 */
-	protected final static Request build(HttpRequest nettyRequest) {
+	protected final static Request build(ChannelHandlerContext ctx, HttpRequest nettyRequest) {
 		final Request request = new Request();
 
 		//request basic
@@ -358,12 +370,25 @@ public class Request {
 		request.path = getPath(request.uri);
 		request.protocolVersion = nettyRequest.getProtocolVersion().text();
 		request.method = nettyRequest.getMethod().name();
-
+		
 		//request headers
 		request.putHeadersAndCookies(nettyRequest.headers());
 
 		//request URI parameters
 		request.putParams(new QueryStringDecoder(request.uri));
+		
+		//IP
+		String ip = request.getHeader("X-Forwarded-For");
+		if(StrUtil.isNotBlank(ip)){
+			// 多级反向代理检测
+			if (ip != null && ip.indexOf(",") > 0) {
+				ip = ip.trim().split(",")[0];
+			}
+		}else{
+			final InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
+			ip = insocket.getAddress().getHostAddress();
+		}
+		request.ip = ip;
 		
 		return request;
 	}
