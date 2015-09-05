@@ -17,6 +17,7 @@ import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.http.HttpUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -382,10 +383,7 @@ public class Request {
 		//IP
 		String ip = request.getHeader("X-Forwarded-For");
 		if(StrUtil.isNotBlank(ip)){
-			// 多级反向代理检测
-			if (ip != null && ip.indexOf(",") > 0) {
-				ip = ip.trim().split(",")[0];
-			}
+			ip = HttpUtil.getMultistageReverseProxyIp(ip);
 		}else{
 			final InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
 			ip = insocket.getAddress().getHostAddress();
