@@ -37,7 +37,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
 		if(isPass) {
-			isPass = false;
+			isPass = false; //归位
 			return;
 		}
 		
