@@ -266,7 +266,7 @@ public class Response {
 	/**
 	 * 设置响应文本内容
 	 * 
-	 * @param contentBytes 响应的字节
+	 * @param byteBuf 响应的字节
 	 * @return 自己
 	 */
 	public Response setContent(ByteBuf byteBuf) {
@@ -275,9 +275,9 @@ public class Response {
 	}
 	
 	/**
-	 * 设置响应的文件
+	 * 设置响应到客户端的文件
 	 * 
-	 * @param contentBytes 响应的字节
+	 * @param file 文件
 	 * @return 自己
 	 */
 	public Response setContent(File file) {
@@ -474,7 +474,6 @@ public class Response {
 	/**
 	 * 304 文件未修改
 	 * 
-	 * @param uri 重定向到的URI
 	 * @return ChannelFuture
 	 */
 	public ChannelFuture sendNotModified() {
@@ -509,7 +508,7 @@ public class Response {
 	 * 发送500 Internal Server Error
 	 * 
 	 * @param msg 消息内容
-	 * @return 
+	 * @return ChannelFuture
 	 */
 	public ChannelFuture sendServerError(String msg) {
 		return sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, msg);
