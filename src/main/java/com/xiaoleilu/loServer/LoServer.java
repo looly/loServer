@@ -1,5 +1,11 @@
 package com.xiaoleilu.loServer;
 
+import org.slf4j.Logger;
+
+import com.xiaoleilu.hutool.DateUtil;
+import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.loServer.handler.ActionHandler;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -8,12 +14,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-
-import org.slf4j.Logger;
-
-import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.Log;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 /**
  * LoServer starter<br>
@@ -25,7 +28,7 @@ import com.xiaoleilu.hutool.Log;
  */
 public class LoServer {
 	private final static Logger log = Log.get();
-
+	
 	/**
 	 * 启动服务
 	 * @param port 端口
@@ -33,6 +36,7 @@ public class LoServer {
 	 */
 	public void start(int port) throws InterruptedException {
 		long start = System.currentTimeMillis();
+		
 		// Configure the server.
 		final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 		final EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -48,7 +52,14 @@ public class LoServer {
 					protected void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline()
 						.addLast(new HttpServerCodec())
-						.addLast(new ServerHandler());
+						//把多个消息转换为一个单一的FullHttpRequest或是FullHttpResponse
+						.addLast(new HttpObjectAggregator(65536))
+						//压缩Http消息
+//						.addLast(new HttpContentCompressor())
+						//大文件支持
+						.addLast(new ChunkedWriteHandler())
+						
+						.addLast(new ActionHandler());
 					}
 				});
 			

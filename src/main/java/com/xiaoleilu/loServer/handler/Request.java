@@ -1,8 +1,6 @@
-package com.xiaoleilu.loServer;
+package com.xiaoleilu.loServer.handler;
 
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,14 +13,15 @@ import com.xiaoleilu.hutool.CharsetUtil;
 import com.xiaoleilu.hutool.CollectionUtil;
 import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.URLUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpHeaders.Values;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -36,29 +35,54 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
  */
 public class Request {
 	
-	public static final String METHOD_DELETE = "DELETE";
-	public static final String METHOD_HEAD = "HEAD";
-	public static final String METHOD_GET = "GET";
-	public static final String METHOD_OPTIONS = "OPTIONS";
-	public static final String METHOD_POST = "POST";
-	public static final String METHOD_PUT = "PUT";
-	public static final String METHOD_TRACE = "TRACE";
+	public static final String METHOD_DELETE = HttpMethod.DELETE.name();
+	public static final String METHOD_HEAD = HttpMethod.HEAD.name();
+	public static final String METHOD_GET = HttpMethod.GET.name();
+	public static final String METHOD_OPTIONS = HttpMethod.OPTIONS.name();
+	public static final String METHOD_POST = HttpMethod.POST.name();
+	public static final String METHOD_PUT = HttpMethod.PUT.name();
+	public static final String METHOD_TRACE = HttpMethod.TRACE.name();
 	
-	private String protocolVersion;
-	private String uri;
+	private HttpRequest nettyRequest;
+	
 	private String path;
-	private String method;
 	private String ip;
 	private Map<String, String> headers = new HashMap<String, String>();
 	private Map<String, List<String>> params = new HashMap<String, List<String>>();
 	private Map<String, Cookie> cookies = new HashMap<String, Cookie>();
 	
 	/**
+	 * 构造
+	 * @param ctx ChannelHandlerContext
+	 * @param nettyRequest HttpRequest
+	 */
+	private Request(ChannelHandlerContext ctx, HttpRequest nettyRequest) {
+		this.nettyRequest = nettyRequest;
+		final String uri = nettyRequest.getUri();
+		this.path = URLUtil.getPath(getUri());
+		
+		this.putHeadersAndCookies(nettyRequest.headers());
+		
+		//request URI parameters
+		this.putParams(new QueryStringDecoder(uri));
+		
+		//IP
+		this.putIp(ctx);
+	}
+	
+	/**
+	 * @return Netty的HttpRequest
+	 */
+	public HttpRequest getNettyRequest(){
+		return this.nettyRequest;
+	}
+	
+	/**
 	 * 获得版本信息
 	 * @return 版本
 	 */
 	public String getProtocolVersion() {
-		return protocolVersion;
+		return nettyRequest.getProtocolVersion().text();
 	}
 	
 	/**
@@ -66,7 +90,7 @@ public class Request {
 	 * @return URI
 	 */
 	public String getUri() {
-		return uri;
+		return nettyRequest.getUri();
 	}
 	
 	/**
@@ -81,7 +105,7 @@ public class Request {
 	 * @return Http method
 	 */
 	public String getMethod() {
-		return method;
+		return nettyRequest.getMethod().name();
 	}
 	
 	/**
@@ -182,7 +206,7 @@ public class Request {
 		}
 		
 		String value = getParam(name);
-		if(METHOD_GET.equalsIgnoreCase(method)) {
+		if(METHOD_GET.equalsIgnoreCase(getMethod())) {
 			value = CharsetUtil.convert(value, charsetOfServlet.toString(), destCharset);
 		}
 		return value;
@@ -317,9 +341,18 @@ public class Request {
 	protected void putParams(QueryStringDecoder decoder) {
 		if(null != decoder) {
 			for (Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
-				this.params.put(entry.getKey(), entry.getValue());
+				putParams(entry.getKey(), entry.getValue());
 			}
 		}
+	}
+	
+	/**
+	 * 填充参数
+	 * @param key 参数名
+	 * @param valueList 参数值数组
+	 */
+	protected void putParams(String key, List<String> valueList) {
+		this.params.put(key, valueList);
 	}
 	
 	/**
@@ -340,15 +373,30 @@ public class Request {
 			}
 		}
 	}
+	
+	/**
+	 * 设置客户端IP
+	 * @param ctx ChannelHandlerContext
+	 */
+	protected void putIp(ChannelHandlerContext ctx) {
+		String ip = getHeader("X-Forwarded-For");
+		if(StrUtil.isNotBlank(ip)){
+			ip = HttpUtil.getMultistageReverseProxyIp(ip);
+		}else{
+			final InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
+			ip = insocket.getAddress().getHostAddress();
+		}
+		this.ip = ip;
+	}
 	//--------------------------------------------------------- Protected method end
 	
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("\r\nprotocolVersion: ").append(protocolVersion).append("\r\n");
-		sb.append("uri: ").append(uri).append("\r\n");
+		sb.append("\r\nprotocolVersion: ").append(getProtocolVersion()).append("\r\n");
+		sb.append("uri: ").append(getUri()).append("\r\n");
 		sb.append("path: ").append(path).append("\r\n");
-		sb.append("method: ").append(method).append("\r\n");
+		sb.append("method: ").append(getMethod()).append("\r\n");
 		sb.append("ip: ").append(ip).append("\r\n");
 		sb.append("headers: ").append(headers).append("\r\n");
 		sb.append("params: \r\n");
@@ -366,46 +414,6 @@ public class Request {
 	 * @return Request
 	 */
 	protected final static Request build(ChannelHandlerContext ctx, HttpRequest nettyRequest) {
-		final Request request = new Request();
-
-		//request basic
-		request.uri = nettyRequest.getUri();
-		request.path = getPath(request.uri);
-		request.protocolVersion = nettyRequest.getProtocolVersion().text();
-		request.method = nettyRequest.getMethod().name();
-		
-		//request headers
-		request.putHeadersAndCookies(nettyRequest.headers());
-
-		//request URI parameters
-		request.putParams(new QueryStringDecoder(request.uri));
-		
-		//IP
-		String ip = request.getHeader("X-Forwarded-For");
-		if(StrUtil.isNotBlank(ip)){
-			ip = HttpUtil.getMultistageReverseProxyIp(ip);
-		}else{
-			final InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
-			ip = insocket.getAddress().getHostAddress();
-		}
-		request.ip = ip;
-		
-		return request;
-	}
-	
-	/**
-	 * 从uri中获得path
-	 * @param uriStr uri
-	 * @return path
-	 */
-	public final static String getPath(String uriStr) {
-		URI uri = null;
-		try {
-			uri = new URI(uriStr);
-		} catch (URISyntaxException e) {
-			Log.error("", e);
-		}
-		
-		return uri == null ? null : uri.getPath();
+		return new Request(ctx, nettyRequest);
 	}
 }

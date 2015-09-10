@@ -1,15 +1,19 @@
 package com.xiaoleilu.loServer;
 
+import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 
-import com.xiaoleilu.hutool.ClassUtil;
+import com.xiaoleilu.hutool.FileUtil;
 import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.hutool.Singleton;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.loServer.action.Action;
+import com.xiaoleilu.loServer.action.DefaultIndexAction;
+import com.xiaoleilu.loServer.exception.ServerSettingException;
 
 /**
  * 全局设定文件
@@ -28,8 +32,16 @@ public class ServerSetting {
 	private static String charset = DEFAULT_CHARSET;
 	/** 端口 */
 	private static int port = 8090;
+	/** 根目录 */
+	private static File root;
 	/** Action映射表 */
-	private static Map<String, Action> actionMap = new ConcurrentHashMap<String, Action>();
+	private static Map<String, Action> actionMap;
+	
+	static{
+		actionMap = new ConcurrentHashMap<String, Action>();
+		final DefaultIndexAction defaultIndexAction = new DefaultIndexAction();
+		actionMap.put(StrUtil.SLASH, defaultIndexAction);
+	}
 	
 	/**
 	 * @return 获取编码
@@ -59,10 +71,61 @@ public class ServerSetting {
 		ServerSetting.port = port;
 	}
 	/**
+	 * @return 根目录
+	 */
+	public static File getRoot() {
+		return root;
+	}
+	/**
+	 * @return 根目录
+	 */
+	public static boolean isRootAvailable() {
+		if(root != null && root.isDirectory() && root.isHidden() == false && root.canRead()){
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * @return 根目录
+	 */
+	public static String getRootPath() {
+		return FileUtil.getAbsolutePath(root);
+	}
+	/**
+	 * 根目录
+	 * @param root 根目录绝对路径
+	 */
+	public static void setRoot(String root) {
+		ServerSetting.root = FileUtil.mkdir(root);
+	}
+	/**
+	 * 根目录
+	 * @param root 根目录绝对路径
+	 */
+	public static void setRoot(File root) {
+		if(root.exists() == false){
+			root.mkdirs();
+		}else if(root.isDirectory() == false){
+			throw new ServerSettingException(StrUtil.format("{} is not a directory!", root.getPath()));
+		}
+		ServerSetting.root = root;
+	}
+	/**
 	 * @return 获取ActionMap
 	 */
 	public static Map<String, Action> getActionMap() {
 		return actionMap;
+	}
+	/**
+	 * 获得路径对应的Action
+	 * @param path 路径，为空时将获得 根目录对应的Action
+	 * @return Action
+	 */
+	public static Action getAction(String path){
+		if(StrUtil.isBlank(path)){
+			path = StrUtil.SLASH;
+		}
+		return getActionMap().get(path.trim());
 	}
 	/**
 	 * 设置ActionMap
@@ -73,12 +136,16 @@ public class ServerSetting {
 	}
 	
 	/**
-	 * 增加Action类
+	 * 设置Action类，已有的Action类将被覆盖
 	 * @param path 拦截路径（必须以"/"开头）
 	 * @param action Action类
 	 */
-	public static void addAction(String path, Action action) {
-		if(StrUtil.isBlank(path) || null == action) {
+	public static void setAction(String path, Action action) {
+		if(StrUtil.isBlank(path)){
+			path = StrUtil.SLASH;
+		}
+		
+		if(null == action) {
 			log.warn("Added blank action, pass it.");
 			return;
 		}
@@ -91,12 +158,13 @@ public class ServerSetting {
 	}
 	
 	/**
-	 * 增加Action类
+	 * 增加Action类，已有的Action类将被覆盖<br>
+	 * 所有Action都是以单例模式存在的！
 	 * @param path 拦截路径（必须以"/"开头）
 	 * @param actionClass Action类
 	 */
-	public static void addAction(String path, Class<? extends Action> actionClass) {
-		addAction(path, (Action)ClassUtil.newInstance(actionClass));
+	public static void setAction(String path, Class<? extends Action> actionClass) {
+		setAction(path, (Action)Singleton.get(actionClass));
 	}
 	
 	/**
