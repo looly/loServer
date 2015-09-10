@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -392,6 +393,7 @@ public class Response {
 		setContentType(contentType);
 		log.debug("Content-Type: {}, Content-Length: {}", contentType, fileLength);
 
+		log.debug("{}", this);
 		ctx.write(this.toDefaultHttpResponse());
 
 		ctx
@@ -468,7 +470,10 @@ public class Response {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append("headers: ").append(headers).append("\r\n");
+		sb.append("headers:\r\n ");
+		for ( Entry<String, String> entry : headers.entries()) {
+			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
+		}
 		sb.append("content: ").append(StrUtil.str(content, CharsetUtil.UTF_8));
 
 		return sb.toString();

@@ -398,7 +398,10 @@ public class Request {
 		sb.append("path: ").append(path).append("\r\n");
 		sb.append("method: ").append(getMethod()).append("\r\n");
 		sb.append("ip: ").append(ip).append("\r\n");
-		sb.append("headers: ").append(headers).append("\r\n");
+		sb.append("headers:\r\n ");
+		for ( Entry<String, String> entry : headers.entrySet()) {
+			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
+		}
 		sb.append("params: \r\n");
 		for ( Entry<String, List<String>> entry : params.entrySet()) {
 			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");

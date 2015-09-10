@@ -84,7 +84,6 @@ public class FileAction implements Action {
 		}
 		
 		try {
-			log.debug("{}", response);
 			response.sendFile(file);
 		} catch (IOException e) {
 			String msg = StrUtil.format("Can not get file {}", file.getName());
