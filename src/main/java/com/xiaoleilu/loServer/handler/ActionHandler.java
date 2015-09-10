@@ -29,6 +29,10 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 		}
 
 		action.doAction(request, response);
-		response.send();
+		
+		//如果发送请求未被出发，则出发之，否则执行一次触发
+		if(false ==response.isSent()){
+			response.send();
+		}
 	}
 }

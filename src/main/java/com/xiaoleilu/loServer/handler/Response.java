@@ -17,19 +17,17 @@ import org.slf4j.Logger;
 
 import com.xiaoleilu.hutool.CharsetUtil;
 import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.FileUtil;
 import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
 import com.xiaoleilu.loServer.ServerSetting;
+import com.xiaoleilu.loServer.listener.FileProgressiveFutureListener;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelProgressiveFuture;
-import io.netty.channel.ChannelProgressiveFutureListener;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -75,7 +73,9 @@ public class Response {
 	private String charset = ServerSetting.getCharset();
 	private HttpHeaders headers = new DefaultHttpHeaders();
 	private Set<Cookie> cookies = new HashSet<Cookie>();
-	private ByteBuf content = Unpooled.EMPTY_BUFFER;
+	private Object content = Unpooled.EMPTY_BUFFER;
+	//发送完成标记
+	private boolean isSent;
 
 	public Response(ChannelHandlerContext ctx, Request request) {
 		this.ctx = ctx;
@@ -273,6 +273,17 @@ public class Response {
 		this.content = byteBuf;
 		return this;
 	}
+	
+	/**
+	 * 设置响应的文件
+	 * 
+	 * @param contentBytes 响应的字节
+	 * @return 自己
+	 */
+	public Response setContent(File file) {
+		this.content = file;
+		return this;
+	}
 
 	/**
 	 * Sets the Date and Cache headers for the HTTP Response
@@ -309,7 +320,7 @@ public class Response {
 	 * 
 	 * @return DefaultHttpResponse
 	 */
-	protected DefaultHttpResponse toDefaultHttpResponse() {
+	private DefaultHttpResponse toDefaultHttpResponse() {
 		final DefaultHttpResponse defaultHttpResponse = new DefaultHttpResponse(httpVersion, status);
 
 		// headers
@@ -329,14 +340,15 @@ public class Response {
 	 * 
 	 * @return FullHttpResponse
 	 */
-	protected FullHttpResponse toFullHttpResponse() {
-		final FullHttpResponse fullHttpResponse = new DefaultFullHttpResponse(httpVersion, status, content);
+	private FullHttpResponse toFullHttpResponse() {
+		final ByteBuf byteBuf = (ByteBuf)content;
+		final FullHttpResponse fullHttpResponse = new DefaultFullHttpResponse(httpVersion, status, byteBuf);
 
 		// headers
 		final HttpHeaders httpHeaders = fullHttpResponse.headers().add(headers);
 		httpHeaders.set(Names.CONTENT_TYPE, StrUtil.format("{};charset={}", contentType, charset));
 		httpHeaders.set(Names.CONTENT_ENCODING, charset);
-		httpHeaders.set(Names.CONTENT_LENGTH, content.readableBytes());
+		httpHeaders.set(Names.CONTENT_LENGTH, byteBuf.readableBytes());
 
 		// Cookies
 		for (Cookie cookie : cookies) {
@@ -349,90 +361,124 @@ public class Response {
 
 	// -------------------------------------------------------------------------------------- send start
 	/**
+	 * 发送响应到客户端<br>
+	 * 
+	 * @return ChannelFuture
+	 * @throws IOException 
+	 */
+	public ChannelFuture send() {
+		ChannelFuture channelFuture;
+		if(content instanceof File){
+			//文件
+			File file = (File)content;
+			try {
+				channelFuture = sendFile(file);
+			} catch (IOException e) {
+				log.error(StrUtil.format("Send {} error!", file), e);
+				channelFuture = sendError(HttpResponseStatus.FORBIDDEN, "");
+			}
+		}else{
+			//普通文本
+			channelFuture = sendFull();
+		}
+		
+		this.isSent = true;
+		return channelFuture;
+	}
+	
+	/**
+	 * @return 是否已经出发发送请求，内部使用<br>
+	 */
+	protected boolean isSent(){
+		return this.isSent;
+	}
+	
+	/**
 	 * 发送响应到客户端
 	 * 
 	 * @return ChannelFuture
 	 */
-	public ChannelFuture send() {
+	private ChannelFuture sendFull() {
 		if (request != null && request.isKeepAlive()) {
 			setKeepAlive();
 			return ctx.writeAndFlush(this.toFullHttpResponse());
 		} else {
-			return sendAndClose();
+			return sendAndCloseFull();
 		}
 	}
-
+	
 	/**
 	 * 发送给到客户端并关闭ChannelHandlerContext
 	 * 
 	 * @return ChannelFuture
 	 */
-	public ChannelFuture sendAndClose() {
+	private ChannelFuture sendAndCloseFull() {
 		return ctx.writeAndFlush(this.toFullHttpResponse()).addListener(ChannelFutureListener.CLOSE);
 	}
-	// -------------------------------------------------------------------------------------- send end
-
-	// ---------------------------------------------------------------------------- special response start
+	
 	/**
 	 * 发送文件
 	 * 
 	 * @param file 文件
+	 * @return ChannelFuture
 	 * @throws IOException
 	 */
-	public void sendFile(File file) throws IOException {
+	private ChannelFuture sendFile(File file) throws IOException {
 		final RandomAccessFile raf = new RandomAccessFile(file, "r");
+		
+		// 内容长度
 		long fileLength = raf.length();
-
-		// 发送头
-		setContentLength(fileLength);
+		this.setContentLength(fileLength);
+		
+		//文件类型
 		String contentType = HttpUtil.getMimeType(file.getName());
 		if(StrUtil.isBlank(contentType)){
 			//无法识别默认使用数据流
 			contentType = "application/octet-stream";
 		}
-		setContentType(contentType);
-		log.debug("Content-Type: {}, Content-Length: {}", contentType, fileLength);
-
-		log.debug("{}", this);
+		this.setContentType(contentType);
+		
 		ctx.write(this.toDefaultHttpResponse());
-
-		ctx
-			.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise())
-			.addListener(new ChannelProgressiveFutureListener(){
-				@Override
-				public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
-					log.debug("Transfer progress: {} / {}", progress, total);
-				}
+		ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise())
+			.addListener(FileProgressiveFutureListener.build(raf));
+		
+		return sendEmptyLast();
+	}
 	
-				@Override
-				public void operationComplete(ChannelProgressiveFuture future) {
-					FileUtil.close(raf);
-					log.debug("Transfer complete.");
-				}
-			});
-
+	/**
+	 * 发送结尾标记，表示发送结束
+	 * @return ChannelFuture
+	 */
+	private ChannelFuture sendEmptyLast(){
 		final ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 		if (false == request.isKeepAlive()) {
 			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
 		}
+		
+		return lastContentFuture;
 	}
+	// -------------------------------------------------------------------------------------- send end
+
+	// ---------------------------------------------------------------------------- special response start
 
 	/**
 	 * 302 重定向
 	 * 
 	 * @param uri 重定向到的URI
+	 * @return ChannelFuture
 	 */
-	public void sendRedirect(String uri) {
-		this.setStatus(HttpResponseStatus.FOUND).setHeader(Names.LOCATION, uri).send();
+	public ChannelFuture sendRedirect(String uri) {
+		return this.setStatus(HttpResponseStatus.FOUND).setHeader(Names.LOCATION, uri).send();
 	}
 
 	/**
 	 * 304 文件未修改
 	 * 
 	 * @param uri 重定向到的URI
+	 * @return ChannelFuture
 	 */
-	public void sendNotModified() {
-		this.setStatus(HttpResponseStatus.NOT_MODIFIED).setHeader(Names.DATE, DateUtil.formatHttpDate(DateUtil.date())).send();
+	public ChannelFuture sendNotModified() {
+		return this.setStatus(HttpResponseStatus.NOT_MODIFIED).setHeader(Names.DATE, DateUtil.formatHttpDate(DateUtil.date())).send();
 	}
 
 	/**
@@ -440,29 +486,33 @@ public class Response {
 	 * 
 	 * @param status 错误状态码
 	 * @param msg 消息内容
+	 * @return ChannelFuture
 	 */
-	public void sendError(HttpResponseStatus status, String msg) {
+	public ChannelFuture sendError(HttpResponseStatus status, String msg) {
 		if (ctx.channel().isActive()) {
-			this.setStatus(status).setContent(msg).send();
+			return this.setStatus(status).setContent(msg).send();
 		}
+		return null;
 	}
 
 	/**
 	 * 发送404 Not Found
 	 * 
 	 * @param msg 消息内容
+	 * @return ChannelFuture
 	 */
-	public void sendNotFound(String msg) {
-		sendError(HttpResponseStatus.NOT_FOUND, msg);
+	public ChannelFuture sendNotFound(String msg) {
+		return sendError(HttpResponseStatus.NOT_FOUND, msg);
 	}
 
 	/**
 	 * 发送500 Internal Server Error
 	 * 
 	 * @param msg 消息内容
+	 * @return 
 	 */
-	public void sendServerError(String msg) {
-		sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, msg);
+	public ChannelFuture sendServerError(String msg) {
+		return sendError(HttpResponseStatus.INTERNAL_SERVER_ERROR, msg);
 	}
 
 	// ---------------------------------------------------------------------------- special response end

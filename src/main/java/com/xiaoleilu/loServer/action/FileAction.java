@@ -1,7 +1,6 @@
 package com.xiaoleilu.loServer.action;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
@@ -83,13 +82,7 @@ public class FileAction implements Action {
 			}
 		}
 		
-		try {
-			response.sendFile(file);
-		} catch (IOException e) {
-			String msg = StrUtil.format("Can not get file {}", file.getName());
-			log.error(msg, e);
-			response.sendError(HttpResponseStatus.FORBIDDEN, msg);
-		}
+		response.setContent(file);
 	}
 	
 	/**
