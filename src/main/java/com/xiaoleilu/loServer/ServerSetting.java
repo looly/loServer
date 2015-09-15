@@ -13,6 +13,7 @@ import com.xiaoleilu.hutool.Singleton;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.DefaultIndexAction;
+import com.xiaoleilu.loServer.annotation.Route;
 import com.xiaoleilu.loServer.exception.ServerSettingException;
 
 /**
@@ -165,6 +166,32 @@ public class ServerSetting {
 	 */
 	public static void setAction(String path, Class<? extends Action> actionClass) {
 		setAction(path, (Action)Singleton.get(actionClass));
+	}
+	
+	/**
+	 * 增加Action类，已有的Action类将被覆盖<br>
+	 * 自动读取Route的注解来获得Path路径
+	 * @param action 带注解的Action对象
+	 */
+	public static void setAction(Action action) {
+		final Route route = action.getClass().getAnnotation(Route.class);
+		if(route != null){
+			final String path = route.value();
+			if(StrUtil.isNotBlank(path)){
+				setAction(path, action);
+				return;
+			}
+		}
+		throw new ServerSettingException("Can not find Route annotation,please add annotation to Action class!");
+	}
+	
+	/**
+	 * 增加Action类，已有的Action类将被覆盖<br>
+	 * 所有Action都是以单例模式存在的！
+	 * @param actionClass 带注解的Action类
+	 */
+	public static void setAction(Class<? extends Action> actionClass) {
+		setAction((Action)Singleton.get(actionClass));
 	}
 	
 	/**
