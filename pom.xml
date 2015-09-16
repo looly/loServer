@@ -3,22 +3,63 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<packaging>jar</packaging>
+	
 	<groupId>com.xiaoleilu</groupId>
 	<artifactId>loServer</artifactId>
 	<version>0.3.0</version>
-	<packaging>jar</packaging>
 	<description>基于Netty的嵌入式应用服务器</description>
+	<url>https://github.com/looly/loServer</url>
+	
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Looly</name>
+			<email>loolly@gmail.com</email>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git@github.com:looly/loServer.git</connection>
+		<developerConnection>scm:git@github.com:looly/loServer.git</developerConnection>
+		<url>git@github.com:looly/loServer.git</url>
+	</scm>
 
 	<properties>
 		<project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
 	</properties>
+	
+	<build>
+		<!-- 最终打包后的名称 -->
+		<finalName>loServer</finalName>
+
+		<plugins>
+			<!-- JDK版本 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<dependencies>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.0.13</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.xiaoleilu</groupId>
@@ -88,22 +129,68 @@
 			<version>3.18.2-GA</version>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<!-- 最终打包后的名称 -->
-		<finalName>loServer</finalName>
-
-		<plugins>
-			<!-- JDK版本 -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+	
+	<profiles>
+		<profile>
+			<id>release</id>
+			<distributionManagement>
+				<snapshotRepository>
+					<id>oss</id>
+					<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+				</snapshotRepository>
+				<repository>
+					<id>oss</id>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+				</repository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<!-- Source -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>2.4</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Javadoc -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.10.3</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Gpg Signature -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+	
 </project>
