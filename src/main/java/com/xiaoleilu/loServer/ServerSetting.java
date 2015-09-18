@@ -98,6 +98,7 @@ public class ServerSetting {
 	 */
 	public static void setRoot(String root) {
 		ServerSetting.root = FileUtil.mkdir(root);
+		log.debug("Set root to [{}]", ServerSetting.root.getAbsolutePath());
 	}
 	/**
 	 * 根目录

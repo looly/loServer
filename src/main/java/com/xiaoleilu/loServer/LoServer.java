@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.loServer.handler.ActionHandler;
-import com.xiaoleilu.loServer.handler.HttpChunkContentCompressor;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -56,7 +55,7 @@ public class LoServer {
 						//把多个消息转换为一个单一的FullHttpRequest或是FullHttpResponse
 						.addLast(new HttpObjectAggregator(65536))
 						//压缩Http消息
-						.addLast(new HttpChunkContentCompressor())
+//						.addLast(new HttpChunkContentCompressor())
 						//大文件支持
 						.addLast(new ChunkedWriteHandler())
 						

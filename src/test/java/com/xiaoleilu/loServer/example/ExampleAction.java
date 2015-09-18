@@ -26,7 +26,7 @@ public class ExampleAction implements Action{
 
 	public static void main(String[] args) {
 		ServerSetting.setAction("/example", ExampleAction.class);
-		ServerSetting.setRoot("F:/Soft");
+		ServerSetting.setRoot("root");
 		ServerSetting.setPort(8090);
 		LoServer.start();
 	}

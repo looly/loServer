@@ -1,5 +1,6 @@
 package com.xiaoleilu.loServer.handler;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -13,11 +14,14 @@ import com.xiaoleilu.hutool.CharsetUtil;
 import com.xiaoleilu.hutool.CollectionUtil;
 import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
+import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.hutool.URLUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
+import com.xiaoleilu.hutool.log.LogWrapper;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders.Names;
 import io.netty.handler.codec.http.HttpHeaders.Values;
@@ -27,14 +31,23 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
+import io.netty.handler.codec.http.multipart.Attribute;
+import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
+import io.netty.handler.codec.http.multipart.FileUpload;
+import io.netty.handler.codec.http.multipart.HttpDataFactory;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 
 /**
  * Http请求对象
+ * 
  * @author Looly
  *
  */
 public class Request {
-	
+	private static final LogWrapper log = Log.get();
+
 	public static final String METHOD_DELETE = HttpMethod.DELETE.name();
 	public static final String METHOD_HEAD = HttpMethod.HEAD.name();
 	public static final String METHOD_GET = HttpMethod.GET.name();
@@ -42,74 +55,93 @@ public class Request {
 	public static final String METHOD_POST = HttpMethod.POST.name();
 	public static final String METHOD_PUT = HttpMethod.PUT.name();
 	public static final String METHOD_TRACE = HttpMethod.TRACE.name();
-	
-	private HttpRequest nettyRequest;
-	
+
+	private static final HttpDataFactory HTTP_DATA_FACTORY = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE);
+
+	private FullHttpRequest nettyRequest;
+
 	private String path;
 	private String ip;
 	private Map<String, String> headers = new HashMap<String, String>();
-	private Map<String, List<String>> params = new HashMap<String, List<String>>();
+	private Map<String, Object> params = new HashMap<String, Object>();
 	private Map<String, Cookie> cookies = new HashMap<String, Cookie>();
-	
+
 	/**
 	 * 构造
+	 * 
 	 * @param ctx ChannelHandlerContext
 	 * @param nettyRequest HttpRequest
 	 */
-	private Request(ChannelHandlerContext ctx, HttpRequest nettyRequest) {
+	private Request(ChannelHandlerContext ctx, FullHttpRequest nettyRequest) {
 		this.nettyRequest = nettyRequest;
 		final String uri = nettyRequest.getUri();
 		this.path = URLUtil.getPath(getUri());
-		
+
 		this.putHeadersAndCookies(nettyRequest.headers());
-		
-		//request URI parameters
+
+		// request URI parameters
 		this.putParams(new QueryStringDecoder(uri));
-		
-		//IP
+		if(nettyRequest.getMethod() != HttpMethod.GET){
+			HttpPostRequestDecoder decoder = null;
+			try {
+				decoder = new HttpPostRequestDecoder(HTTP_DATA_FACTORY, nettyRequest);
+				this.putParams(decoder);
+			} finally {
+				if(null != decoder){
+					decoder.destroy();
+					decoder = null;
+				}
+			}
+		}
+
+		// IP
 		this.putIp(ctx);
 	}
-	
+
 	/**
 	 * @return Netty的HttpRequest
 	 */
-	public HttpRequest getNettyRequest(){
+	public HttpRequest getNettyRequest() {
 		return this.nettyRequest;
 	}
-	
+
 	/**
 	 * 获得版本信息
+	 * 
 	 * @return 版本
 	 */
 	public String getProtocolVersion() {
 		return nettyRequest.getProtocolVersion().text();
 	}
-	
+
 	/**
 	 * 获得URI（带参数的路径）
+	 * 
 	 * @return URI
 	 */
 	public String getUri() {
 		return nettyRequest.getUri();
 	}
-	
+
 	/**
 	 * @return 获得path（不带参数的路径）
 	 */
 	public String getPath() {
 		return path;
 	}
-	
+
 	/**
 	 * 获得Http方法
+	 * 
 	 * @return Http method
 	 */
 	public String getMethod() {
 		return nettyRequest.getMethod().name();
 	}
-	
+
 	/**
 	 * 获得IP地址
+	 * 
 	 * @return IP地址
 	 */
 	public String getIp() {
@@ -118,12 +150,13 @@ public class Request {
 
 	/**
 	 * 获得所有头信息
+	 * 
 	 * @return 头信息Map
 	 */
 	public Map<String, String> getHeaders() {
 		return headers;
 	}
-	
+
 	/**
 	 * 使用ISO8859_1字符集获得Header内容<br>
 	 * 由于Header中很少有中文，故一般情况下无需转码
@@ -134,14 +167,14 @@ public class Request {
 	public String getHeader(String headerKey) {
 		return headers.get(headerKey);
 	}
-	
+
 	/**
 	 * @return 是否为普通表单（application/x-www-form-urlencoded）
 	 */
 	public boolean isXWwwFormUrlencoded() {
 		return "application/x-www-form-urlencoded".equals(getHeader("Content-Type"));
 	}
-	
+
 	/**
 	 * 获得指定的Cookie
 	 * 
@@ -151,67 +184,71 @@ public class Request {
 	public Cookie getCookie(String name) {
 		return cookies.get(name);
 	}
-	
+
 	/**
 	 * @return 获得所有Cookie信息
 	 */
 	public Map<String, Cookie> getCookies() {
 		return this.cookies;
 	}
-	
+
 	/**
 	 * @return 客户浏览器是否为IE
 	 */
 	public boolean isIE() {
 		String userAgent = getHeader("User-Agent");
-		if(StrUtil.isNotBlank(userAgent)) {
+		if (StrUtil.isNotBlank(userAgent)) {
 			userAgent = userAgent.toUpperCase();
-			if(userAgent.contains("MSIE") || userAgent.contains("TRIDENT")) {
+			if (userAgent.contains("MSIE") || userAgent.contains("TRIDENT")) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @return 获得请求参数
 	 */
 	public String getParam(String name) {
-		final List<String> values = params.get(name);
-		if(CollectionUtil.isEmpty(values)) {
+		final Object value = params.get(name);
+		if(null == value){
 			return null;
 		}
-		return values.get(0);
+		
+		if(value instanceof String){
+			return (String)value;
+		}
+		return value.toString();
 	}
-	
+
 	/**
 	 * 获得GET请求参数<br>
 	 * 会根据浏览器类型自动识别GET请求的编码方式从而解码<br>
-	 * 考虑到Servlet容器中会首先解码，给定的charsetOfServlet就是Servlet设置的解码charset<br>
 	 * charsetOfServlet为null则默认的ISO_8859_1
+	 * 
 	 * @param name 参数名
-	 * @param charsetOfServlet Servlet容器中的字符集
+	 * @param charset 字符集
 	 * @return 获得请求参数
 	 */
-	public String getParam(String name, Charset charsetOfServlet) {
-		if(null == charsetOfServlet) {
-			charsetOfServlet = Charset.forName(CharsetUtil.ISO_8859_1);
+	public String getParam(String name, Charset charset) {
+		if (null == charset) {
+			charset = Charset.forName(CharsetUtil.ISO_8859_1);
 		}
-		
+
 		String destCharset = CharsetUtil.UTF_8;
-		if(isIE()) {
-			//IE浏览器GET请求使用GBK编码
+		if (isIE()) {
+			// IE浏览器GET请求使用GBK编码
 			destCharset = CharsetUtil.GBK;
 		}
-		
+
 		String value = getParam(name);
-		if(METHOD_GET.equalsIgnoreCase(getMethod())) {
-			value = CharsetUtil.convert(value, charsetOfServlet.toString(), destCharset);
+		if (METHOD_GET.equalsIgnoreCase(getMethod())) {
+			value = CharsetUtil.convert(value, charset.toString(), destCharset);
 		}
 		return value;
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -221,7 +258,7 @@ public class Request {
 		String param = getParam(name);
 		return StrUtil.isBlank(param) ? defaultValue : param;
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -230,7 +267,7 @@ public class Request {
 	public Integer getIntParam(String name, Integer defaultValue) {
 		return Conver.toInt(getParam(name), defaultValue);
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -239,7 +276,7 @@ public class Request {
 	public Long getLongParam(String name, Long defaultValue) {
 		return Conver.toLong(getParam(name), defaultValue);
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -248,7 +285,7 @@ public class Request {
 	public Double getDoubleParam(String name, Double defaultValue) {
 		return Conver.toDouble(getParam(name), defaultValue);
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -257,7 +294,7 @@ public class Request {
 	public Float getFloatParam(String name, Float defaultValue) {
 		return Conver.toFloat(getParam(name), defaultValue);
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
@@ -266,13 +303,13 @@ public class Request {
 	public Boolean getBoolParam(String name, Boolean defaultValue) {
 		return Conver.toBool(getParam(name), defaultValue);
 	}
-	
+
 	/**
 	 * 格式：<br>
-	* 1、yyyy-MM-dd HH:mm:ss <br>
-	* 2、yyyy-MM-dd <br>
-	* 3、HH:mm:ss <br>
-	* 
+	 * 1、yyyy-MM-dd HH:mm:ss <br>
+	 * 2、yyyy-MM-dd <br>
+	 * 3、HH:mm:ss <br>
+	 * 
 	 * @param name 参数名
 	 * @param defaultValue 当客户端未传参的默认值
 	 * @return 获得Date类型请求参数，默认格式：
@@ -281,7 +318,7 @@ public class Request {
 		String param = getParam(name);
 		return StrUtil.isBlank(param) ? defaultValue : DateUtil.parse(param);
 	}
-	
+
 	/**
 	 * @param name 参数名
 	 * @param format 格式
@@ -295,13 +332,25 @@ public class Request {
 
 	/**
 	 * 获得请求参数<br>
-	 * 数组类型值，常用于表单中的多选框
+	 * 列表类型值，常用于表单中的多选框
 	 * 
 	 * @param name 参数名
 	 * @return 数组
 	 */
+	@SuppressWarnings("unchecked")
 	public List<String> getArrayParam(String name) {
-		return params.get(name);
+		Object value = params.get(name);
+		if(null == value){
+			return null;
+		}
+		
+		if(value instanceof List){
+			return (List<String>) value;
+		}else if(value instanceof String){
+			return CollectionUtil.newArrayList((String)value);
+		}else{
+			throw new RuntimeException("Value is not a List type!");
+		}
 	}
 
 	/**
@@ -309,87 +358,141 @@ public class Request {
 	 * 
 	 * @return Map
 	 */
-	public Map<String, List<String>> getParams() {
+	public Map<String, Object> getParams() {
 		return params;
 	}
-	
+
 	/**
 	 * @return 是否为长连接
 	 */
 	public boolean isKeepAlive() {
 		final String connectionHeader = getHeader(Names.CONNECTION);
-		//无论任何版本Connection为close时都关闭连接
-		if(Values.CLOSE.equalsIgnoreCase(connectionHeader)) {
+		// 无论任何版本Connection为close时都关闭连接
+		if (Values.CLOSE.equalsIgnoreCase(connectionHeader)) {
 			return false;
 		}
-		
-		//HTTP/1.0只有Connection为Keep-Alive时才会保持连接
-		if(HttpVersion.HTTP_1_0.text().equals(getProtocolVersion())) {
-			if(false == Values.KEEP_ALIVE.equalsIgnoreCase(connectionHeader)) {
+
+		// HTTP/1.0只有Connection为Keep-Alive时才会保持连接
+		if (HttpVersion.HTTP_1_0.text().equals(getProtocolVersion())) {
+			if (false == Values.KEEP_ALIVE.equalsIgnoreCase(connectionHeader)) {
 				return false;
 			}
 		}
-		//HTTP/1.1默认打开Keep-Alive
+		// HTTP/1.1默认打开Keep-Alive
 		return true;
 	}
-	
-	//--------------------------------------------------------- Protected method start
+
+	// --------------------------------------------------------- Protected method start
 	/**
-	 * 填充参数
+	 * 填充参数（GET请求的参数）
+	 * 
 	 * @param decoder QueryStringDecoder
 	 */
 	protected void putParams(QueryStringDecoder decoder) {
-		if(null != decoder) {
+		if (null != decoder) {
+			List<String> valueList;
 			for (Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
-				putParams(entry.getKey(), entry.getValue());
+				valueList = entry.getValue();
+				if(null != valueList){
+					if(valueList.size() == 1){
+						this.putParam(entry.getKey(), valueList.get(0));
+					}
+					this.putParam(entry.getKey(), valueList);
+				}
 			}
+		}
+	}
+
+	/**
+	 * 填充参数（POST请求的参数）
+	 * 
+	 * @param decoder QueryStringDecoder
+	 */
+	protected void putParams(HttpPostRequestDecoder decoder) {
+		if (null == decoder) {
+			return;
+		}
+		
+		for (InterfaceHttpData data : decoder.getBodyHttpDatas()) {
+			putParam(data);
 		}
 	}
 	
 	/**
 	 * 填充参数
-	 * @param key 参数名
-	 * @param valueList 参数值数组
+	 * 
+	 * @param data InterfaceHttpData
 	 */
-	protected void putParams(String key, List<String> valueList) {
-		this.params.put(key, valueList);
+	protected void putParam(InterfaceHttpData data) {
+		final HttpDataType dataType = data.getHttpDataType();
+		if (dataType == HttpDataType.Attribute) {
+			//普通参数
+			Attribute attribute = (Attribute) data;
+			try {
+				this.putParam(attribute.getName(), attribute.getValue());
+			} catch (IOException e) {
+				Log.error(e);
+			}
+		}else if(dataType == HttpDataType.FileUpload){
+			//文件
+			FileUpload fileUpload = (FileUpload) data;
+			if(fileUpload.isCompleted()){
+				try {
+					this.putParam(data.getName(), fileUpload.getFile());
+				} catch (IOException e) {
+					log.error(e, "Get file param [{}] error!", data.getName());
+				}
+			}
+		}
 	}
-	
+
+	/**
+	 * 填充参数
+	 * 
+	 * @param key 参数名
+	 * @param value 参数值
+	 */
+	protected void putParam(String key, Object value) {
+		this.params.put(key, value);
+	}
+
 	/**
 	 * 填充头部信息和Cookie信息
+	 * 
 	 * @param headers HttpHeaders
 	 */
 	protected void putHeadersAndCookies(HttpHeaders headers) {
 		for (Entry<String, String> entry : headers) {
 			this.headers.put(entry.getKey(), entry.getValue());
 		}
-		
-		//Cookie
-		final String cookieString =this.headers.get(Names.COOKIE);
-		if(StrUtil.isNotBlank(cookieString)) {
-			final Set<Cookie> cookies = ServerCookieDecoder.LAX .decode(cookieString);
+
+		// Cookie
+		final String cookieString = this.headers.get(Names.COOKIE);
+		if (StrUtil.isNotBlank(cookieString)) {
+			final Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(cookieString);
 			for (Cookie cookie : cookies) {
 				this.cookies.put(cookie.name(), cookie);
 			}
 		}
 	}
-	
+
 	/**
 	 * 设置客户端IP
+	 * 
 	 * @param ctx ChannelHandlerContext
 	 */
 	protected void putIp(ChannelHandlerContext ctx) {
 		String ip = getHeader("X-Forwarded-For");
-		if(StrUtil.isNotBlank(ip)){
+		if (StrUtil.isNotBlank(ip)) {
 			ip = HttpUtil.getMultistageReverseProxyIp(ip);
-		}else{
+		} else {
 			final InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
 			ip = insocket.getAddress().getHostAddress();
 		}
 		this.ip = ip;
 	}
-	//--------------------------------------------------------- Protected method end
-	
+	// --------------------------------------------------------- Protected method end
+
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
@@ -399,24 +502,25 @@ public class Request {
 		sb.append("method: ").append(getMethod()).append("\r\n");
 		sb.append("ip: ").append(ip).append("\r\n");
 		sb.append("headers:\r\n ");
-		for ( Entry<String, String> entry : headers.entrySet()) {
+		for (Entry<String, String> entry : headers.entrySet()) {
 			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
 		}
 		sb.append("params: \r\n");
-		for ( Entry<String, List<String>> entry : params.entrySet()) {
+		for (Entry<String, Object> entry : params.entrySet()) {
 			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
 		}
-		
+
 		return sb.toString();
 	}
-	
+
 	/**
 	 * 构建Request对象
+	 * 
 	 * @param ctx ChannelHandlerContext
 	 * @param nettyRequest Netty的HttpRequest
 	 * @return Request
 	 */
-	protected final static Request build(ChannelHandlerContext ctx, HttpRequest nettyRequest) {
+	protected final static Request build(ChannelHandlerContext ctx, FullHttpRequest nettyRequest) {
 		return new Request(ctx, nettyRequest);
 	}
 }
