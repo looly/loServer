@@ -8,6 +8,7 @@ import com.xiaoleilu.hutool.log.LogWrapper;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.FileAction;
+import com.xiaoleilu.loServer.filter.Filter;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -26,18 +27,13 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 
 		final Request request = Request.build(ctx, fullHttpRequest);
 		final Response response = Response.build(ctx, request);
-
-		Action action = ServerSetting.getAction(request.getPath());
-		if (null == action) {
-			// 非Action方法，调用静态文件读取
-			action = Singleton.get(FileAction.class);
-		}
-
-		action.doAction(request, response);
 		
-		//如果发送请求未被出发，则出发之，否则执行一次触发
-		if(false ==response.isSent()){
-			response.send();
+		//do filter
+		boolean isPass = this.doFilter(request, response);
+		
+		if(isPass){
+			//do action
+			this.doAction(request, response);
 		}
 	}
 	
@@ -49,4 +45,52 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 			super.exceptionCaught(ctx, cause);
 		}
 	}
+	
+	//---------------------------------------------------------------------------------------- Private method start
+	/**
+	 * 执行过滤
+	 * @param request 请求
+	 * @param response 响应
+	 * @param 是否继续
+	 */
+	private boolean doFilter(Request request, Response response) {
+		//全局过滤器
+		Filter filter = ServerSetting.getWildCardFilter();
+		if(null != filter){
+			if(false == filter.doFilter(request, response)){
+				return false;
+			}
+		}
+		
+		//自定义Path过滤器
+		filter = ServerSetting.getFilter(request.getPath());
+		if(null != filter){
+			if(false == filter.doFilter(request, response)){
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * 执行Action
+	 * @param request 请求对象
+	 * @param response 响应对象
+	 */
+	private void doAction(Request request, Response response){
+		Action action = ServerSetting.getAction(request.getPath());
+		if (null == action) {
+			// 非Action方法，调用静态文件读取
+			action = Singleton.get(FileAction.class);
+		}
+
+		action.doAction(request, response);
+		
+		//如果发送请求未被触发，则触发之，否则跳过。
+		if(false ==response.isSent()){
+			response.send();
+		}
+	}
+	//---------------------------------------------------------------------------------------- Private method start
 }

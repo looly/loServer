@@ -7,7 +7,7 @@
 	
 	<groupId>com.xiaoleilu</groupId>
 	<artifactId>loServer</artifactId>
-	<version>0.4.0</version>
+	<version>0.5.0</version>
 	<name>loServer</name>
 	<description>基于Netty的嵌入式应用服务器</description>
 	<url>https://github.com/looly/loServer</url>
