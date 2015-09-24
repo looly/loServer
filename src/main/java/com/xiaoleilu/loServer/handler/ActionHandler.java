@@ -35,6 +35,11 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 			//do action
 			this.doAction(request, response);
 		}
+		
+		//如果发送请求未被触发，则触发之，否则跳过。
+		if(false ==response.isSent()){
+			response.send();
+		}
 	}
 	
 	@Override
@@ -86,11 +91,6 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 		}
 
 		action.doAction(request, response);
-		
-		//如果发送请求未被触发，则触发之，否则跳过。
-		if(false ==response.isSent()){
-			response.send();
-		}
 	}
 	//---------------------------------------------------------------------------------------- Private method start
 }
