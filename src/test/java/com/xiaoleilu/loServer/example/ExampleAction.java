@@ -22,6 +22,7 @@ public class ExampleAction implements Action{
 	public void doAction(Request request, Response response) {
 		String a = request.getParam("a");
 		response.setContent("response a: " + a);
+		throw new RuntimeException("Test");
 	}
 
 	public static void main(String[] args) {

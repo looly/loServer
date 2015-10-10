@@ -221,6 +221,14 @@ public class Request {
 		}
 		return value.toString();
 	}
+	
+	/**
+	 * @param name 参数名
+	 * @return 获得请求参数
+	 */
+	public Object getObjParam(String name) {
+		return params.get(name);
+	}
 
 	/**
 	 * 获得GET请求参数<br>

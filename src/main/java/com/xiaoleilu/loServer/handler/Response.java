@@ -69,7 +69,7 @@ public class Response {
 
 	private HttpVersion httpVersion = HttpVersion.HTTP_1_1;
 	private HttpResponseStatus status = HttpResponseStatus.OK;
-	private String contentType = CONTENT_TYPE_TEXT;
+	private String contentType = CONTENT_TYPE_HTML;
 	private String charset = ServerSetting.getCharset();
 	private HttpHeaders headers = new DefaultHttpHeaders();
 	private Set<Cookie> cookies = new HashSet<Cookie>();
@@ -243,7 +243,7 @@ public class Response {
 	// --------------------------------------------------------- Cookie end
 
 	/**
-	 * 设置响应文本内容
+	 * 设置响应HTML文本内容
 	 * 
 	 * @param contentText 响应的文本
 	 * @return 自己
@@ -251,6 +251,39 @@ public class Response {
 	public Response setContent(String contentText) {
 		this.content = Unpooled.copiedBuffer(contentText, Charset.forName(charset));
 		return this;
+	}
+	
+	/**
+	 * 设置响应文本内容
+	 * 
+	 * @param contentText 响应的文本
+	 * @return 自己
+	 */
+	public Response setTextContent(String contentText) {
+		setContentType(CONTENT_TYPE_TEXT);
+		return setContent(contentText);
+	}
+	
+	/**
+	 * 设置响应JSON文本内容
+	 * 
+	 * @param contentText 响应的JSON文本
+	 * @return 自己
+	 */
+	public Response setJsonContent(String contentText) {
+		setContentType(request.isIE() ? CONTENT_TYPE_JSON : CONTENT_TYPE_JSON);
+		return setContent(contentText);
+	}
+	
+	/**
+	 * 设置响应XML文本内容
+	 * 
+	 * @param contentText 响应的XML文本
+	 * @return 自己
+	 */
+	public Response setXmlContent(String contentText) {
+		setContentType(CONTENT_TYPE_XML);
+		return setContent(contentText);
 	}
 
 	/**

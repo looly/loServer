@@ -7,6 +7,7 @@ import com.xiaoleilu.hutool.Singleton;
 import com.xiaoleilu.hutool.log.LogWrapper;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.action.Action;
+import com.xiaoleilu.loServer.action.ErrorAction;
 import com.xiaoleilu.loServer.action.FileAction;
 import com.xiaoleilu.loServer.filter.Filter;
 
@@ -28,12 +29,18 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 		final Request request = Request.build(ctx, fullHttpRequest);
 		final Response response = Response.build(ctx, request);
 		
-		//do filter
-		boolean isPass = this.doFilter(request, response);
-		
-		if(isPass){
-			//do action
-			this.doAction(request, response);
+		try {
+			//do filter
+			boolean isPass = this.doFilter(request, response);
+			
+			if(isPass){
+				//do action
+				this.doAction(request, response);
+			}
+		} catch (Exception e) {
+			Action errorAction = Singleton.get(ErrorAction.class);
+			request.putParam("e", e);
+			errorAction.doAction(request, response);
 		}
 		
 		//如果发送请求未被触发，则触发之，否则跳过。
