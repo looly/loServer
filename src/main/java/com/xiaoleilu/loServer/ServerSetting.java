@@ -13,6 +13,7 @@ import com.xiaoleilu.hutool.Singleton;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.DefaultIndexAction;
+import com.xiaoleilu.loServer.action.ErrorAction;
 import com.xiaoleilu.loServer.annotation.Route;
 import com.xiaoleilu.loServer.exception.ServerSettingException;
 import com.xiaoleilu.loServer.filter.Filter;
@@ -29,7 +30,9 @@ public class ServerSetting {
 	/** 默认的字符集编码 */
 	public final static String DEFAULT_CHARSET = "utf-8";
 	
-	public final static String WILD_CARD = "/*";
+	public final static String MAPPING_ALL = "/*";
+	
+	public final static String MAPPING_ERROR = "/_error";
 	//-------------------------------------------------------- Default value end
 	
 	/** 字符编码 */
@@ -47,8 +50,8 @@ public class ServerSetting {
 		filterMap = new ConcurrentHashMap<String, Filter>();
 		
 		actionMap = new ConcurrentHashMap<String, Action>();
-		final DefaultIndexAction defaultIndexAction = new DefaultIndexAction();
-		actionMap.put(StrUtil.SLASH, defaultIndexAction);
+		actionMap.put(StrUtil.SLASH, new DefaultIndexAction());
+		actionMap.put(MAPPING_ERROR, new ErrorAction());
 	}
 	
 	/**
@@ -185,29 +188,6 @@ public class ServerSetting {
 	 */
 	public static void setFilter(String path, Class<? extends Filter> filterClass) {
 		setFilter(path, (Filter)Singleton.get(filterClass));
-	}
-	
-	/**
-	 * 设置通配Filter类，已有的Filter类将被覆盖
-	 * @param filter Action类
-	 */
-	public static void setWildCardFilter(Filter filter) {
-		setFilter(WILD_CARD, filter);
-	}
-	
-	/**
-	 * 设置通配Filter类，已有的Filter类将被覆盖
-	 * @param filterClass Filter类
-	 */
-	public static void setWildCardFilter(Class<? extends Filter> filterClass) {
-		setWildCardFilter((Filter)Singleton.get(filterClass));
-	}
-	
-	/**
-	 * @return 获得通配路径对应的Filter
-	 */
-	public static Filter getWildCardFilter() {
-		return getFilter(WILD_CARD);
 	}
 	//----------------------------------------------------------------------------------------------- Filter end
 	

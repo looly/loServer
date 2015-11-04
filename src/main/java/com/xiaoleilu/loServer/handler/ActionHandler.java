@@ -38,8 +38,8 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 				this.doAction(request, response);
 			}
 		} catch (Exception e) {
-			Action errorAction = Singleton.get(ErrorAction.class);
-			request.putParam("e", e);
+			Action errorAction = ServerSetting.getAction(ServerSetting.MAPPING_ERROR);
+			request.putParam(ErrorAction.ERROR_PARAM_NAME, e);
 			errorAction.doAction(request, response);
 		}
 		
@@ -67,7 +67,7 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 	 */
 	private boolean doFilter(Request request, Response response) {
 		//全局过滤器
-		Filter filter = ServerSetting.getWildCardFilter();
+		Filter filter = ServerSetting.getFilter(ServerSetting.MAPPING_ALL);
 		if(null != filter){
 			if(false == filter.doFilter(request, response)){
 				return false;
@@ -93,8 +93,12 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 	private void doAction(Request request, Response response){
 		Action action = ServerSetting.getAction(request.getPath());
 		if (null == action) {
-			// 非Action方法，调用静态文件读取
-			action = Singleton.get(FileAction.class);
+			//查找匹配所有路径的Action
+			action = ServerSetting.getAction(ServerSetting.MAPPING_ALL);
+			if(null == action){
+				// 非Action方法，调用静态文件读取
+				action = Singleton.get(FileAction.class);
+			}
 		}
 
 		action.doAction(request, response);
