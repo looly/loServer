@@ -402,10 +402,7 @@ public class Request {
 			for (Entry<String, List<String>> entry : decoder.parameters().entrySet()) {
 				valueList = entry.getValue();
 				if(null != valueList){
-					if(valueList.size() == 1){
-						this.putParam(entry.getKey(), valueList.get(0));
-					}
-					this.putParam(entry.getKey(), valueList);
+					this.putParam(entry.getKey(), 1 == valueList.size() ? valueList.get(0) : valueList);
 				}
 			}
 		}
