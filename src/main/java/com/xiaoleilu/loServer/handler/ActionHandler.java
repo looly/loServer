@@ -52,7 +52,7 @@ public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		if(cause instanceof IOException){
-			log.warn("{}", cause);
+			log.warn("{}", cause.getMessage());
 		}else{
 			super.exceptionCaught(ctx, cause);
 		}
