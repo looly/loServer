@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.xiaoleilu.hutool.CharsetUtil;
-import com.xiaoleilu.hutool.CollectionUtil;
 import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.Log;
@@ -355,7 +354,7 @@ public class Request {
 		if(value instanceof List){
 			return (List<String>) value;
 		}else if(value instanceof String){
-			return CollectionUtil.newArrayList((String)value);
+			return StrUtil.split((String)value, ',');
 		}else{
 			throw new RuntimeException("Value is not a List type!");
 		}
