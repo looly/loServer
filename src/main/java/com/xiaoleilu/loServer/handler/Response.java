@@ -13,13 +13,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.slf4j.Logger;
-
 import com.xiaoleilu.hutool.CharsetUtil;
 import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.listener.FileProgressiveFutureListener;
 
@@ -50,7 +49,7 @@ import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
  *
  */
 public class Response {
-	private final static Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 
 	/** 返回内容类型：普通文本 */
 	public final static String CONTENT_TYPE_TEXT = "text/plain";

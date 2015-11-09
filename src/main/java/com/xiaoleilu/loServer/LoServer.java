@@ -1,9 +1,8 @@
 package com.xiaoleilu.loServer;
 
-import org.slf4j.Logger;
-
 import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.handler.ActionHandler;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -27,7 +26,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
  *
  */
 public class LoServer {
-	private final static Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 	
 	/**
 	 * 启动服务

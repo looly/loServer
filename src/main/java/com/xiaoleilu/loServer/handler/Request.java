@@ -13,11 +13,11 @@ import java.util.Set;
 import com.xiaoleilu.hutool.CharsetUtil;
 import com.xiaoleilu.hutool.Conver;
 import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
 import com.xiaoleilu.hutool.URLUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
-import com.xiaoleilu.hutool.log.LogWrapper;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -45,7 +45,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
  *
  */
 public class Request {
-	private static final LogWrapper log = Log.get();
+	private static final Log log = StaticLog.get();
 
 	public static final String METHOD_DELETE = HttpMethod.DELETE.name();
 	public static final String METHOD_HEAD = HttpMethod.HEAD.name();
@@ -435,7 +435,7 @@ public class Request {
 			try {
 				this.putParam(attribute.getName(), attribute.getValue());
 			} catch (IOException e) {
-				Log.error(e);
+				log.error(e);
 			}
 		}else if(dataType == HttpDataType.FileUpload){
 			//文件

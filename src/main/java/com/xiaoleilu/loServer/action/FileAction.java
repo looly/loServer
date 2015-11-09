@@ -8,13 +8,12 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-
 import com.xiaoleilu.hutool.DateUtil;
 import com.xiaoleilu.hutool.FileUtil;
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.ReUtil;
 import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.handler.Request;
 import com.xiaoleilu.loServer.handler.Response;
@@ -29,7 +28,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  *
  */
 public class FileAction implements Action {
-	private static final Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 
 	private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
 	private static final SimpleDateFormat HTTP_DATE_FORMATER = new SimpleDateFormat(DateUtil.HTTP_DATETIME_PATTERN, Locale.US);

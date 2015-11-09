@@ -3,10 +3,9 @@ package com.xiaoleilu.loServer.action;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.slf4j.Logger;
-
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.handler.Request;
 import com.xiaoleilu.loServer.handler.Response;
 
@@ -18,7 +17,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  *
  */
 public class ErrorAction implements Action{
-	private static final Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 	
 	public final static String ERROR_PARAM_NAME = "_e";
 	

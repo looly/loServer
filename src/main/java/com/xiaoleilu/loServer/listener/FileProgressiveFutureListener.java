@@ -2,10 +2,9 @@ package com.xiaoleilu.loServer.listener;
 
 import java.io.RandomAccessFile;
 
-import org.slf4j.Logger;
-
 import com.xiaoleilu.hutool.FileUtil;
-import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
@@ -16,7 +15,7 @@ import io.netty.channel.ChannelProgressiveFutureListener;
  *
  */
 public class FileProgressiveFutureListener implements ChannelProgressiveFutureListener{
-	private final static Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 	
 	private RandomAccessFile raf;
 	

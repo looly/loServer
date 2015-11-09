@@ -2,9 +2,9 @@ package com.xiaoleilu.loServer.handler;
 
 import java.io.IOException;
 
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.Singleton;
-import com.xiaoleilu.hutool.log.LogWrapper;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.ErrorAction;
@@ -21,7 +21,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
  * @author Looly
  */
 public class ActionHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-	private final static LogWrapper log = Log.get();
+	private static final Log log = StaticLog.get();
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest) throws Exception {

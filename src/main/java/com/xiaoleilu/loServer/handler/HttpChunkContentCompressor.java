@@ -1,6 +1,6 @@
 package com.xiaoleilu.loServer.handler;
 
-import com.xiaoleilu.hutool.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -16,7 +16,7 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 public class HttpChunkContentCompressor extends HttpContentCompressor {
 	@Override
 	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-		Log.debug("Write object [{}]", msg);
+		StaticLog.debug("Write object [{}]", msg);
 		
 		if (msg instanceof FileRegion || msg instanceof DefaultHttpResponse) {
 			//文件传输不经过Gzip压缩

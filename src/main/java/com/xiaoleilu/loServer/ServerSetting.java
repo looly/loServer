@@ -5,12 +5,11 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-
 import com.xiaoleilu.hutool.FileUtil;
-import com.xiaoleilu.hutool.Log;
 import com.xiaoleilu.hutool.Singleton;
 import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.log.Log;
+import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.DefaultIndexAction;
 import com.xiaoleilu.loServer.action.ErrorAction;
@@ -24,7 +23,7 @@ import com.xiaoleilu.loServer.filter.Filter;
  *
  */
 public class ServerSetting {
-	private static Logger log = Log.get();
+	private static final Log log = StaticLog.get();
 	
 	//-------------------------------------------------------- Default value start
 	/** 默认的字符集编码 */
