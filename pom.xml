@@ -6,7 +6,7 @@
 
 	<groupId>com.xiaoleilu</groupId>
 	<artifactId>loServer</artifactId>
-	<version>0.5.4</version>
+	<version>0.5.5</version>
 	<name>loServer</name>
 	<description>基于Netty的嵌入式应用服务器</description>
 	<url>https://github.com/looly/loServer</url>
@@ -58,7 +58,7 @@
 		<dependency>
 			<groupId>com.xiaoleilu</groupId>
 			<artifactId>hutool</artifactId>
-			<version>2.13.0</version>
+			<version>2.13.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
