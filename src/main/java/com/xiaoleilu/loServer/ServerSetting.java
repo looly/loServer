@@ -5,11 +5,11 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.xiaoleilu.hutool.FileUtil;
-import com.xiaoleilu.hutool.Singleton;
-import com.xiaoleilu.hutool.StrUtil;
+import com.xiaoleilu.hutool.lang.Singleton;
 import com.xiaoleilu.hutool.log.Log;
 import com.xiaoleilu.hutool.log.StaticLog;
+import com.xiaoleilu.hutool.util.FileUtil;
+import com.xiaoleilu.hutool.util.StrUtil;
 import com.xiaoleilu.loServer.action.Action;
 import com.xiaoleilu.loServer.action.DefaultIndexAction;
 import com.xiaoleilu.loServer.action.ErrorAction;

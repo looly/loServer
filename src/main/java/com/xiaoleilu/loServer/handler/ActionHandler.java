@@ -2,7 +2,7 @@ package com.xiaoleilu.loServer.handler;
 
 import java.io.IOException;
 
-import com.xiaoleilu.hutool.Singleton;
+import com.xiaoleilu.hutool.lang.Singleton;
 import com.xiaoleilu.hutool.log.Log;
 import com.xiaoleilu.hutool.log.StaticLog;
 import com.xiaoleilu.loServer.ServerSetting;

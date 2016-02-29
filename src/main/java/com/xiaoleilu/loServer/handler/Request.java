@@ -10,14 +10,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.xiaoleilu.hutool.CharsetUtil;
-import com.xiaoleilu.hutool.Conver;
-import com.xiaoleilu.hutool.DateUtil;
-import com.xiaoleilu.hutool.StrUtil;
-import com.xiaoleilu.hutool.URLUtil;
 import com.xiaoleilu.hutool.http.HttpUtil;
+import com.xiaoleilu.hutool.lang.Conver;
 import com.xiaoleilu.hutool.log.Log;
 import com.xiaoleilu.hutool.log.StaticLog;
+import com.xiaoleilu.hutool.util.CharsetUtil;
+import com.xiaoleilu.hutool.util.DateUtil;
+import com.xiaoleilu.hutool.util.StrUtil;
+import com.xiaoleilu.hutool.util.URLUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
