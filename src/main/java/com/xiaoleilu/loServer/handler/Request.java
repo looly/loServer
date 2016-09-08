@@ -21,9 +21,9 @@ import com.xiaoleilu.hutool.util.URLUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpHeaders.Values;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpVersion;
@@ -73,14 +73,14 @@ public class Request {
 	 */
 	private Request(ChannelHandlerContext ctx, FullHttpRequest nettyRequest) {
 		this.nettyRequest = nettyRequest;
-		final String uri = nettyRequest.getUri();
+		final String uri = nettyRequest.uri();
 		this.path = URLUtil.getPath(getUri());
 
 		this.putHeadersAndCookies(nettyRequest.headers());
 
 		// request URI parameters
 		this.putParams(new QueryStringDecoder(uri));
-		if(nettyRequest.getMethod() != HttpMethod.GET){
+		if(nettyRequest.method() != HttpMethod.GET){
 			HttpPostRequestDecoder decoder = null;
 			try {
 				decoder = new HttpPostRequestDecoder(HTTP_DATA_FACTORY, nettyRequest);
@@ -110,7 +110,7 @@ public class Request {
 	 * @return 版本
 	 */
 	public String getProtocolVersion() {
-		return nettyRequest.getProtocolVersion().text();
+		return nettyRequest.protocolVersion().text();
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class Request {
 	 * @return URI
 	 */
 	public String getUri() {
-		return nettyRequest.getUri();
+		return nettyRequest.uri();
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class Request {
 	 * @return Http method
 	 */
 	public String getMethod() {
-		return nettyRequest.getMethod().name();
+		return nettyRequest.method().name();
 	}
 
 	/**
@@ -373,15 +373,15 @@ public class Request {
 	 * @return 是否为长连接
 	 */
 	public boolean isKeepAlive() {
-		final String connectionHeader = getHeader(Names.CONNECTION);
+		final String connectionHeader = getHeader(HttpHeaderNames.CONNECTION.toString());
 		// 无论任何版本Connection为close时都关闭连接
-		if (Values.CLOSE.equalsIgnoreCase(connectionHeader)) {
+		if (HttpHeaderValues.CLOSE.toString().equalsIgnoreCase(connectionHeader)) {
 			return false;
 		}
 
 		// HTTP/1.0只有Connection为Keep-Alive时才会保持连接
 		if (HttpVersion.HTTP_1_0.text().equals(getProtocolVersion())) {
-			if (false == Values.KEEP_ALIVE.equalsIgnoreCase(connectionHeader)) {
+			if (false == HttpHeaderValues.KEEP_ALIVE.toString().equalsIgnoreCase(connectionHeader)) {
 				return false;
 			}
 		}
@@ -471,7 +471,7 @@ public class Request {
 		}
 
 		// Cookie
-		final String cookieString = this.headers.get(Names.COOKIE);
+		final String cookieString = this.headers.get(HttpHeaderNames.COOKIE);
 		if (StrUtil.isNotBlank(cookieString)) {
 			final Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(cookieString);
 			for (Cookie cookie : cookies) {

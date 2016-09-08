@@ -32,9 +32,9 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
-import io.netty.handler.codec.http.HttpHeaders.Values;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -169,7 +169,7 @@ public class Response {
 	 * @return 自己
 	 */
 	public Response setContentLength(long contentLength) {
-		setHeader(Names.CONTENT_LENGTH, contentLength);
+		setHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), contentLength);
 		return this;
 	}
 
@@ -179,7 +179,7 @@ public class Response {
 	 * @return 自己
 	 */
 	public Response setKeepAlive() {
-		setHeader(Names.CONNECTION, Values.KEEP_ALIVE);
+		setHeader(HttpHeaderNames.CONNECTION.toString(), HttpHeaderValues.KEEP_ALIVE.toString());
 		return this;
 	}
 
@@ -335,14 +335,14 @@ public class Response {
 
 		// Date header
 		Calendar time = new GregorianCalendar();
-		setHeader(Names.DATE, formatter.format(time.getTime()));
+		setHeader(HttpHeaderNames.DATE.toString(), formatter.format(time.getTime()));
 
 		// Add cache headers
 		time.add(Calendar.SECOND, httpCacheSeconds);
 
-		setHeader(Names.EXPIRES, formatter.format(time.getTime()));
-		setHeader(Names.CACHE_CONTROL, "private, max-age=" + httpCacheSeconds);
-		setHeader(Names.LAST_MODIFIED, formatter.format(DateUtil.date(lastModify)));
+		setHeader(HttpHeaderNames.EXPIRES.toString(), formatter.format(time.getTime()));
+		setHeader(HttpHeaderNames.CACHE_CONTROL.toString(), "private, max-age=" + httpCacheSeconds);
+		setHeader(HttpHeaderNames.LAST_MODIFIED.toString(), formatter.format(DateUtil.date(lastModify)));
 	}
 
 	// -------------------------------------------------------------------------------------- build HttpResponse start
@@ -360,7 +360,7 @@ public class Response {
 
 		// Cookies
 		for (Cookie cookie : cookies) {
-			httpHeaders.add(Names.SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie));
+			httpHeaders.add(HttpHeaderNames.SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie));
 		}
 
 		return defaultHttpResponse;
@@ -378,13 +378,13 @@ public class Response {
 
 		// headers
 		final HttpHeaders httpHeaders = fullHttpResponse.headers().add(headers);
-		httpHeaders.set(Names.CONTENT_TYPE, StrUtil.format("{};charset={}", contentType, charset));
-		httpHeaders.set(Names.CONTENT_ENCODING, charset);
-		httpHeaders.set(Names.CONTENT_LENGTH, byteBuf.readableBytes());
+		httpHeaders.set(HttpHeaderNames.CONTENT_TYPE.toString(), StrUtil.format("{};charset={}", contentType, charset));
+		httpHeaders.set(HttpHeaderNames.CONTENT_ENCODING.toString(), charset);
+		httpHeaders.set(HttpHeaderNames.CONTENT_LENGTH.toString(), byteBuf.readableBytes());
 
 		// Cookies
 		for (Cookie cookie : cookies) {
-			httpHeaders.add(Names.SET_COOKIE, ServerCookieEncoder.LAX.encode(cookie));
+			httpHeaders.add(HttpHeaderNames.SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie));
 		}
 
 		return fullHttpResponse;
@@ -500,7 +500,7 @@ public class Response {
 	 * @return ChannelFuture
 	 */
 	public ChannelFuture sendRedirect(String uri) {
-		return this.setStatus(HttpResponseStatus.FOUND).setHeader(Names.LOCATION, uri).send();
+		return this.setStatus(HttpResponseStatus.FOUND).setHeader(HttpHeaderNames.LOCATION.toString(), uri).send();
 	}
 
 	/**
@@ -509,7 +509,7 @@ public class Response {
 	 * @return ChannelFuture
 	 */
 	public ChannelFuture sendNotModified() {
-		return this.setStatus(HttpResponseStatus.NOT_MODIFIED).setHeader(Names.DATE, DateUtil.formatHttpDate(DateUtil.date())).send();
+		return this.setStatus(HttpResponseStatus.NOT_MODIFIED).setHeader(HttpHeaderNames.DATE.toString(), DateUtil.formatHttpDate(DateUtil.date())).send();
 	}
 
 	/**

@@ -2,9 +2,9 @@ package com.xiaoleilu.loServer.listener;
 
 import java.io.RandomAccessFile;
 
+import com.xiaoleilu.hutool.io.IoUtil;
 import com.xiaoleilu.hutool.log.Log;
 import com.xiaoleilu.hutool.log.StaticLog;
-import com.xiaoleilu.hutool.util.IoUtil;
 
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;

@@ -18,7 +18,7 @@ import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.handler.Request;
 import com.xiaoleilu.loServer.handler.Response;
 
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
@@ -61,7 +61,7 @@ public class FileAction implements Action {
 		}
 
 		// Cache Validation
-		String ifModifiedSince = request.getHeader(Names.IF_MODIFIED_SINCE);
+		String ifModifiedSince = request.getHeader(HttpHeaderNames.IF_MODIFIED_SINCE.toString());
 		if (StrUtil.isNotBlank(ifModifiedSince)) {
 			Date ifModifiedSinceDate = null;
 			try {
