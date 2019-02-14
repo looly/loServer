@@ -1,6 +1,6 @@
 package com.xiaoleilu.loServer.exception;
 
-import com.xiaoleilu.hutool.util.StrUtil;
+import cn.hutool.core.util.StrUtil;
 
 /**
  * 设置异常

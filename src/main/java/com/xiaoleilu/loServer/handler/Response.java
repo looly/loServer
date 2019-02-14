@@ -13,15 +13,16 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.xiaoleilu.hutool.http.HttpUtil;
-import com.xiaoleilu.hutool.log.Log;
-import com.xiaoleilu.hutool.log.StaticLog;
-import com.xiaoleilu.hutool.util.CharsetUtil;
-import com.xiaoleilu.hutool.util.DateUtil;
-import com.xiaoleilu.hutool.util.StrUtil;
 import com.xiaoleilu.loServer.ServerSetting;
 import com.xiaoleilu.loServer.listener.FileProgressiveFutureListener;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.StaticLog;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -330,7 +331,7 @@ public class Response {
 	 * @param httpCacheSeconds 缓存时间，单位秒
 	 */
 	public void setDateAndCache(long lastModify, int httpCacheSeconds) {
-		SimpleDateFormat formatter = new SimpleDateFormat(DateUtil.HTTP_DATETIME_PATTERN, Locale.US);
+		SimpleDateFormat formatter = new SimpleDateFormat(DatePattern.HTTP_DATETIME_PATTERN, Locale.US);
 		formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
 		// Date header
