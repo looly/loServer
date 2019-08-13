@@ -12,8 +12,8 @@ import java.util.Set;
 
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.util.CharsetUtil;
-import cn.hutool.core.util.NetUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.log.Log;

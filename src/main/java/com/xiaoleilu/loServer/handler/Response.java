@@ -74,7 +74,7 @@ public class Response {
 	private HttpHeaders headers = new DefaultHttpHeaders();
 	private Set<Cookie> cookies = new HashSet<Cookie>();
 	private Object content = Unpooled.EMPTY_BUFFER;
-	//发送完成标记
+	// 发送完成标记
 	private boolean isSent;
 
 	public Response(ChannelHandlerContext ctx, Request request) {
@@ -252,7 +252,7 @@ public class Response {
 		this.content = Unpooled.copiedBuffer(contentText, Charset.forName(charset));
 		return this;
 	}
-	
+
 	/**
 	 * 设置响应文本内容
 	 * 
@@ -263,7 +263,7 @@ public class Response {
 		setContentType(CONTENT_TYPE_TEXT);
 		return setContent(contentText);
 	}
-	
+
 	/**
 	 * 设置响应JSON文本内容
 	 * 
@@ -274,7 +274,7 @@ public class Response {
 		setContentType(request.isIE() ? CONTENT_TYPE_JSON : CONTENT_TYPE_JSON);
 		return setContent(contentText);
 	}
-	
+
 	/**
 	 * 设置响应XML文本内容
 	 * 
@@ -306,7 +306,7 @@ public class Response {
 		this.content = byteBuf;
 		return this;
 	}
-	
+
 	/**
 	 * 设置响应到客户端的文件
 	 * 
@@ -356,13 +356,7 @@ public class Response {
 	private DefaultHttpResponse toDefaultHttpResponse() {
 		final DefaultHttpResponse defaultHttpResponse = new DefaultHttpResponse(httpVersion, status);
 
-		// headers
-		final HttpHeaders httpHeaders = defaultHttpResponse.headers().add(headers);
-
-		// Cookies
-		for (Cookie cookie : cookies) {
-			httpHeaders.add(HttpHeaderNames.SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie));
-		}
+		fillHeadersAndCookies(defaultHttpResponse.headers());
 
 		return defaultHttpResponse;
 	}
@@ -374,21 +368,30 @@ public class Response {
 	 * @return FullHttpResponse
 	 */
 	private FullHttpResponse toFullHttpResponse() {
-		final ByteBuf byteBuf = (ByteBuf)content;
+		final ByteBuf byteBuf = (ByteBuf) content;
 		final FullHttpResponse fullHttpResponse = new DefaultFullHttpResponse(httpVersion, status, byteBuf);
 
 		// headers
-		final HttpHeaders httpHeaders = fullHttpResponse.headers().add(headers);
+		final HttpHeaders httpHeaders = fullHttpResponse.headers();
+		fillHeadersAndCookies(httpHeaders);
+		httpHeaders.set(HttpHeaderNames.CONTENT_LENGTH.toString(), byteBuf.readableBytes());
+
+		return fullHttpResponse;
+	}
+
+	/**
+	 * 填充头信息和Cookie信息
+	 * 
+	 * @param httpHeaders Http头
+	 */
+	private void fillHeadersAndCookies(HttpHeaders httpHeaders) {
 		httpHeaders.set(HttpHeaderNames.CONTENT_TYPE.toString(), StrUtil.format("{};charset={}", contentType, charset));
 		httpHeaders.set(HttpHeaderNames.CONTENT_ENCODING.toString(), charset);
-		httpHeaders.set(HttpHeaderNames.CONTENT_LENGTH.toString(), byteBuf.readableBytes());
 
 		// Cookies
 		for (Cookie cookie : cookies) {
 			httpHeaders.add(HttpHeaderNames.SET_COOKIE.toString(), ServerCookieEncoder.LAX.encode(cookie));
 		}
-
-		return fullHttpResponse;
 	}
 	// -------------------------------------------------------------------------------------- build HttpResponse end
 
@@ -397,35 +400,35 @@ public class Response {
 	 * 发送响应到客户端<br>
 	 * 
 	 * @return ChannelFuture
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public ChannelFuture send() {
 		ChannelFuture channelFuture;
-		if(content instanceof File){
-			//文件
-			File file = (File)content;
+		if (content instanceof File) {
+			// 文件
+			File file = (File) content;
 			try {
 				channelFuture = sendFile(file);
 			} catch (IOException e) {
 				log.error(StrUtil.format("Send {} error!", file), e);
 				channelFuture = sendError(HttpResponseStatus.FORBIDDEN, "");
 			}
-		}else{
-			//普通文本
+		} else {
+			// 普通文本
 			channelFuture = sendFull();
 		}
-		
+
 		this.isSent = true;
 		return channelFuture;
 	}
-	
+
 	/**
 	 * @return 是否已经出发发送请求，内部使用<br>
 	 */
-	protected boolean isSent(){
+	protected boolean isSent() {
 		return this.isSent;
 	}
-	
+
 	/**
 	 * 发送响应到客户端
 	 * 
@@ -439,7 +442,7 @@ public class Response {
 			return sendAndCloseFull();
 		}
 	}
-	
+
 	/**
 	 * 发送给到客户端并关闭ChannelHandlerContext
 	 * 
@@ -448,7 +451,7 @@ public class Response {
 	private ChannelFuture sendAndCloseFull() {
 		return ctx.writeAndFlush(this.toFullHttpResponse()).addListener(ChannelFutureListener.CLOSE);
 	}
-	
+
 	/**
 	 * 发送文件
 	 * 
@@ -458,36 +461,36 @@ public class Response {
 	 */
 	private ChannelFuture sendFile(File file) throws IOException {
 		final RandomAccessFile raf = new RandomAccessFile(file, "r");
-		
+
 		// 内容长度
 		long fileLength = raf.length();
 		this.setContentLength(fileLength);
-		
-		//文件类型
+
+		// 文件类型
 		String contentType = HttpUtil.getMimeType(file.getName());
-		if(StrUtil.isBlank(contentType)){
-			//无法识别默认使用数据流
+		if (StrUtil.isBlank(contentType)) {
+			// 无法识别默认使用数据流
 			contentType = "application/octet-stream";
 		}
 		this.setContentType(contentType);
-		
+
 		ctx.write(this.toDefaultHttpResponse());
-		ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise())
-			.addListener(FileProgressiveFutureListener.build(raf));
-		
+		ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise()).addListener(FileProgressiveFutureListener.build(raf));
+
 		return sendEmptyLast();
 	}
-	
+
 	/**
 	 * 发送结尾标记，表示发送结束
+	 * 
 	 * @return ChannelFuture
 	 */
-	private ChannelFuture sendEmptyLast(){
+	private ChannelFuture sendEmptyLast() {
 		final ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 		if (false == request.isKeepAlive()) {
 			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
 		}
-		
+
 		return lastContentFuture;
 	}
 	// -------------------------------------------------------------------------------------- send end
@@ -553,7 +556,7 @@ public class Response {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
 		sb.append("headers:\r\n ");
-		for ( Entry<String, String> entry : headers.entries()) {
+		for (Entry<String, String> entry : headers.entries()) {
 			sb.append("    ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
 		}
 		sb.append("content: ").append(StrUtil.str(content, CharsetUtil.UTF_8));

@@ -58,23 +58,23 @@
 		<dependency>
 			<groupId>cn.hutool</groupId>
 			<artifactId>hutool-all</artifactId>
-			<version>4.4.5</version>
+			<version>4.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.5.Final</version>
+			<version>4.1.38.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.21.0-GA</version>
+			<version>3.25.0-GA</version>
 		</dependency>
 		<!-- LogBack -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.1.7</version>
+			<version>1.2.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
