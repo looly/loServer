@@ -79,7 +79,7 @@ public class Request {
 
 		// request URI parameters
 		this.putParams(new QueryStringDecoder(uri));
-		if(nettyRequest.method() != HttpMethod.GET){
+		if(nettyRequest.method() != HttpMethod.GET && !"application/octet-stream".equals(nettyRequest.headers().get("Content-Type"))){
 			HttpPostRequestDecoder decoder = null;
 			try {
 				decoder = new HttpPostRequestDecoder(HTTP_DATA_FACTORY, nettyRequest);
